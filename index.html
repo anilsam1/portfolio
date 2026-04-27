@@ -879,21 +879,22 @@ footer{
     <form class="contact-form reveal" id="contactForm">
       <div class="form-group">
         <label class="form-label">Your Name</label>
-        <input type="text" class="form-input" placeholder="John Doe" required>
+        <input type="text" name="name" class="form-input" placeholder="John Doe" required>
       </div>
       <div class="form-group">
         <label class="form-label">Email Address</label>
-        <input type="email" class="form-input" placeholder="john@example.com" required>
+        <input type="email" name="email" class="form-input" placeholder="john@example.com" required>
       </div>
       <div class="form-group">
         <label class="form-label">Subject</label>
-        <input type="text" class="form-input" placeholder="Project Inquiry">
+        <input type="text" name="subject" class="form-input" placeholder="Project Inquiry">
       </div>
       <div class="form-group">
         <label class="form-label">Message</label>
-        <textarea class="form-textarea" placeholder="Tell me about your project..." required></textarea>
+        <textarea name="message" class="form-textarea" placeholder="Tell me about your project..." required></textarea>
       </div>
       <button type="submit" class="btn-primary" id="submitBtn">Send Message →</button>
+      <div id="formMsg" style="display:none;padding:.8rem 1rem;font-family:'Space Mono',monospace;font-size:.78rem;margin-top:.5rem;"></div>
     </form>
     <div class="contact-info reveal reveal-d1">
       <div class="contact-item">
@@ -1018,11 +1019,37 @@ function type(){
 setTimeout(type,1500);
 
 // ---- CONTACT FORM ----
-document.getElementById('contactForm').addEventListener('submit',e=>{
+const FORMSPREE_ID = 'xkoklwng';
+document.getElementById('contactForm').addEventListener('submit',async e=>{
   e.preventDefault();
   const btn=document.getElementById('submitBtn');
-  btn.textContent='Message Sent! ✓';btn.style.background='#00d084';
-  setTimeout(()=>{btn.textContent='Send Message →';btn.style.background='';},3500);
+  const msg=document.getElementById('formMsg');
+  const form=e.target;
+
+  btn.textContent='Sending…';btn.disabled=true;btn.style.opacity='.7';
+  msg.style.display='none';
+
+  try {
+    const res=await fetch(`https://formspree.io/f/${FORMSPREE_ID}`,{
+      method:'POST',
+      headers:{'Accept':'application/json'},
+      body:new FormData(form)
+    });
+    if(res.ok){
+      btn.textContent='Message Sent! ✓';btn.style.background='#00d084';btn.style.opacity='1';
+      msg.textContent='Thanks! I\'ll get back to you within 24 hours.';
+      msg.style.display='block';msg.style.color='#00d084';msg.style.background='rgba(0,208,132,.07)';msg.style.border='1px solid rgba(0,208,132,.3)';
+      form.reset();
+      setTimeout(()=>{btn.textContent='Send Message →';btn.style.background='';btn.disabled=false;},4000);
+    } else {
+      const data=await res.json();
+      throw new Error(data?.errors?.[0]?.message||'Send failed');
+    }
+  } catch(err){
+    btn.textContent='Send Message →';btn.disabled=false;btn.style.opacity='1';
+    msg.textContent=`Error: ${err.message}. Email me directly: anil.sonagara2002@gmail.com`;
+    msg.style.display='block';msg.style.color='#ff6b35';msg.style.background='rgba(255,107,53,.07)';msg.style.border='1px solid rgba(255,107,53,.3)';
+  }
 });
 
 // ---- PROJECT CARDS CLICK ----
